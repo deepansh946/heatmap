@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>HeatMap</title>
+  <link rel="stylesheet" href="static/style.css">
+</head>
+
+<body>
+  <div class="settings">
+
+    <div class="box">
+      <div class="setting">Radius
+        <span id="radius">21</span>
+      </div>
+      <button onclick="changeRadius(true)">Up</button>
+      <button onclick="changeRadius(false)">Down</button>
+    </div>
+
+    <div class="box">
+      <div class="setting">Intensity
+        <span id="intensity">200</span>
+      </div>
+      <button onclick="changeIntensity(true)">Up</button>
+      <button onclick="changeIntensity(false)">Down</button>
+    </div>
+
+    <div class="box">
+      <div class="setting">Opacity
+        <span id="opacity">.6</span>
+      </div>
+      <button onclick="changeOpacity(true)">Up</button>
+      <button onclick="changeOpacity(false)">Down</button>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <script>
+    const maxI = 200, r = 21, op = .6;
+    var map, heatMap;
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 2,
+        center: { lat: 37.775, lng: -122.34 },
+        mapTypeId: "roadmap"
+      });
+
+      fetch("static/location.json").then((response) => {
+        response.json().then((result) => {
+          let locations = result.locations.map((val) => {
+            return new google.maps.LatLng(val.latitudeE7 * (10 ** -7), val.longitudeE7 * (10 ** -7));
+          })
+
+          heatmap = new google.maps.visualization.HeatmapLayer({
+            data: locations,
+            map: map,
+            maxIntensity: maxI,
+            radius: r,
+            opacity: op
+          });
+        });
+      });
+    }
+
+    //Function to toggle values
+    function toggle(bool, current, step, min, max) {
+      if (bool && current >= max) return current;
+      if (!bool && current <= max) return current;
+
+      if (bool) return current + step;
+      else return current - step;
+    }
+
+    //Function to round values
+    function round(value, precision) {
+      var multiplier = Math.pow(10, precision || 0);
+      return (value * multiplier) / multiplier;
+    }
+
+    function changeRadius(bool) {
+      const step = 3, min = 0, max = 50;
+      let current = heatmap.get('radius');
+      let newRadius = toggle(bool, current, step, min, max);
+
+      heatmap.set('radius', newRadius);
+      document.getElementById('radius').innerText = newRadius;
+    }
+
+
+    function changeOpacity(bool) {
+      const step = .2, min = 0, max = 1;
+      let current = heatmap.get('opacity');
+      let newValue = toggle(bool, current, step, min, max);
+      let rounded = round(newValue, 1);
+
+      heatmap.set('opacity', rounded);
+      document.getElementById("opacity").innerText = rounded;
+    }
+
+    function changeIntensity(bool) {
+      const step = 25, min = 0, max = 1000;
+      let current = heatmap.get('maxIntensity');
+      let newValue = toggle(bool, current, step, min, max);
+
+      heatmap.set('maxIntensity', newValue);
+      document.getElementById("intensity").innerText = newValue;
+    };
+
+  </script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBvI-O0o1wXlJOaESjrNkp3CkUadg_eLjY&libraries=visualization&callback=initMap">
+  </script>
+</body>
+
+</html>
